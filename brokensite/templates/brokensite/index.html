@@ -1,15 +1,76 @@
-{% load static %}
-
-<link rel="stylesheet" href="{% static 'brokensite/css/site.css' %}" />
-
-{% if latest_question_list %}
-    <ul>
-    {% for question in latest_question_list %}
-        <li><a href="{% url 'brokensite:detail' question.id %}">{{ question.question_text }}</a></li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No polls are available.</p>
-{% endif %}
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'brokensite/css/site.css' %}"/>
+    <meta charset="UTF-8"/>
+    <title>Amazing Notes - Please login</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="description" content=""/>
+    <link rel="icon" href="favicon.png">
+</head>
+<body>
 <p><a href="{% url 'logout' %}">Log Out</a></p>
+<p class="error">
+    {{ error }}
+</p>
+<h1>
+    Amazing Notes
+</h1>
+<h2>Your notes</h2>
+{% if notes|length < 1 %}
+    <i>You have no notes</i>
+{% else %}
+    <p><i>You may click on a note to delete it. This action can not be undone.</i></p>
+    <ul>
+        {% for note in notes %}
+            <li class="clickable" onclick="deleteNote({{ note.id }})">({{ note.id }}) {{ note }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+<h2>Add note</h2>
+<form method="POST">
+    {% csrf_token %}
+    <div>
+        <label for="note_text">Note text</label>
+        <textarea name="note_text" id="note_text"></textarea>
+    </div>
+    <button type="Submit">Add note</button>
+</form>
+</body>
+<script>
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function deleteNote(id) {
+        const url = '/' + id
+        const data = new FormData()
+        fetch(url, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            redirect: "follow",
+            body: data,
+            credentials: "same-origin"
+        }).then((result) => {
+            window.location.href = '/'
+        })
+    }
+</script>
+</html>
+
+
