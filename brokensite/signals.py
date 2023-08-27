@@ -4,7 +4,7 @@ from brokensite.models import SecurityQuestion
 
 def create_required_objects(sender, **kwargs):
     if not User.objects.filter(username="hannu").exists():
-        user = User.objects.create_user("hannu", None, "hannu")
+        user = User.objects.create_user("hannu", "hannu.s.korvala@gmail.com", "hannu")
         q = SecurityQuestion.objects.create(question="What color is a red car?", answer="red", user_id=user.id)
         q.save()
 

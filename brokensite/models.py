@@ -15,3 +15,7 @@ class SecurityQuestion(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     question = models.CharField(max_length=500)
     answer = models.CharField(max_length=500)
+
+class RecoveryCode(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=500)

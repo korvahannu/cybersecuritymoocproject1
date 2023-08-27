@@ -1,12 +1,19 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.http import JsonResponse
-from .models import Note, SecurityQuestion
+from django.shortcuts import render, get_object_or_404
+from .models import Note, RecoveryCode
 from django.utils import timezone
-from django.db import connection
+from django.core.mail import send_mail
 import json
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
+
+import random
+import string
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
 
 
 @login_required
@@ -27,9 +34,6 @@ def index(request):
 
 
 # Flaw: csrf exempted
-# this enables an attack where attacker forces authenticated user to submit a request
-# to this web application
-@csrf_exempt
 @login_required()
 def delete(request):
     if request.method == "POST":
@@ -38,13 +42,8 @@ def delete(request):
 
         if note_id is not None:
             # A03:2021 – Injection
-            # This is unsafe and gives in the possibility for an injection attack
-            # should be using the following instead:
-            # note = get_object_or_404(Note, pk=note_id)
-            # note.delete()
-            with connection.cursor() as cursor:
-                query = "DELETE FROM brokensite_note WHERE user_id=" + str(request.user.id) + " AND id=" + str(note_id)
-                cursor.executescript(query)
+            note = get_object_or_404(Note, pk=note_id)
+            note.delete()
 
     notes = Note.objects.filter(user=request.user).order_by('-date_published')
     context = {"notes": notes, "error": ""}
@@ -52,11 +51,10 @@ def delete(request):
 
 
 # A01:2021 – Broken Access Control icon
-# @login_required missing, user id is retrieved from request
+@login_required()
 def search(request):
     keyword = request.GET.get('keyword', None)
-    # should be request.user.id
-    userid = request.GET.get('userid', None)
+    userid = request.user.id
 
     if keyword is not None:
         notes = Note.objects.filter(note_text__contains=keyword, user_id=userid)
@@ -72,36 +70,45 @@ def recover(request):
     if request.method == "GET":
         return render(request, "brokensite/recover.html")
     else:
-        try:
-            username = request.POST.get('username')
-            user = User.objects.filter(username=username).first()
-            answer = request.POST.get('answer')
-            newpassword = request.POST.get('password')
+        randomstring = get_random_string(20)
+        user = User.objects.filter(email=request.POST.get('email', None)).first()
+        RecoveryCode.objects.filter(user_id=user.id).delete()
+        code = RecoveryCode(user_id=user.id, code=randomstring)
+        code.save()
 
-            question = SecurityQuestion.objects.filter(user_id=user.id).first()
+        """""
+        send_mail(
+            "Password recovery code",
+            code.code,
+            "admin@amazingnotes.com",
+            [user.email],
+            fail_silently=False,
+        )
+        """
 
-            if question.answer != answer:
-                raise Exception("Answers did not match")
+        return render(request, "brokensite/recover.html", {"message": "Email sent!"})
 
-            user.set_password(newpassword)
-            question.answer = request.POST.get('newanswer')
-            question.question = request.POST.get('newquestion')
-            question.save()
+
+def changepassword(request):
+    try:
+        if request.method == "GET":
+            return render(request, "brokensite/changepassword.html")
+        else:
+            code = request.POST.get("code", None)
+            newpassword = request.POST.get("newpassword")
+            newpasswordagain = request.POST.get("newpasswordagain")
+            user = User.objects.filter(email=request.POST.get('email', None)).first()
+
+            recoverycode = RecoveryCode.objects.filter(user_id=user.id).first()
+
+            if recoverycode.code != code or newpassword != newpasswordagain:
+                return render(request, "brokensite/changepassword.html", {"message": "Password change failed."})
+
+            recoverycode.delete()
+            user.set_password(newpasswordagain)
             user.save()
 
-            # Insecure design with the password being just text
-            return render(request, "brokensite/recover.html", {"message": "Password recovered! New password is " + newpassword})
-        except:
-            return render(request, "brokensite/recover.html", {"message": "Password recovery failed."})
+            return render(request, "brokensite/changepassword.html", {"message": "Password updated!"})
 
-# A04:2021 – Insecure Design icon
-def getquestion(request):
-    try:
-        username = request.GET.get('username', None)
-        user = User.objects.filter(username=username).first()
-        question = SecurityQuestion.objects.filter(user_id=user.id).first().question
-        return JsonResponse({
-            "question": question
-        })
     except:
-        return JsonResponse({})
+        return render(request, "brokensite/changepassword.html", {"message": "Password change failed."})
