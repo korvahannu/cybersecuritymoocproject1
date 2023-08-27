@@ -67,11 +67,11 @@ def search(request):
     return render(request, "brokensite/search.html", context)
 
 
+# A04:2021 – Insecure Design
 def recover(request):
     if request.method == "GET":
         return render(request, "brokensite/recover.html")
     else:
-        # handle post here
         try:
             username = request.POST.get('username')
             user = User.objects.filter(username=username).first()
@@ -89,12 +89,12 @@ def recover(request):
             question.save()
             user.save()
 
-
+            # Insecure design with the password being just text
             return render(request, "brokensite/recover.html", {"message": "Password recovered! New password is " + newpassword})
         except:
             return render(request, "brokensite/recover.html", {"message": "Password recovery failed."})
 
-
+# A04:2021 – Insecure Design icon
 def getquestion(request):
     try:
         username = request.GET.get('username', None)
