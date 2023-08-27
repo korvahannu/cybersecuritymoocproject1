@@ -10,3 +10,8 @@ class Note(models.Model):
     def __str__(self):
         return self.note_text
 
+
+class SecurityQuestion(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.CharField(max_length=500)
+    answer = models.CharField(max_length=500)

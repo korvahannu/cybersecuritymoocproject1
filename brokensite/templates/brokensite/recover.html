@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'brokensite/css/site.css' %}"/>
+    <meta charset="UTF-8"/>
+    <title>Recover Password - Amazing Notes</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="description" content=""/>
+    <link rel="icon" href="favicon.png">
+</head>
+<body>
+<h1>Password recovery</h1>
+<p class="error">
+    {{ message }}
+</p>
+<form method="POST">
+    {% csrf_token %}
+    <div style="margin-bottom: 1rem">
+        <label for="username">
+            Username:
+        </label>
+        <input type="text" name="username" id="username"/>
+    </div>
+    <div id="fullform">
+        <p>
+            <b>Your question is:</b> <br/>
+            <span id="questionText"></span>
+        </p>
+        <div style="margin-bottom: 1rem">
+            <label for="answer">
+                Answer to Question:
+            </label>
+            <input type="text" name="answer" id="answer"/>
+        </div>
+        <div style="margin-bottom: 1rem">
+            <label for="password">
+                New password:
+            </label>
+            <input type="text" name="password" id="password"/>
+        </div>
+        <div style="margin-bottom: 1rem">
+            <label for="newquestion">
+                New Question:
+            </label>
+            <input type="text" name="newquestion" id="newquestion"/>
+        </div>
+        <div style="margin-bottom: 1rem">
+            <label for="answer">
+                Answer to New Question:
+            </label>
+            <input type="text" name="newanswer" id="newanswer"/>
+        </div>
+        <button type="submit">Change Password</button>
+    </div>
+</form>
+<p>
+    <a href="/accounts/login">Return</a>
+</p>
+</body>
+<script>
+    const fullform = document.getElementById('fullform');
+    const questionText = document.getElementById('questionText');
+    fullform.style.display = 'none'
+
+    const handleChange = async (event) => {
+        question = await getQuestion(event.target.value)
+
+
+        if (question) {
+            fullform.style.display = 'block';
+            questionText.innerText = question;
+        } else {
+            fullform.style.display = 'none'
+            questionText.innerText = ""
+        }
+    }
+
+    document.getElementById('username')
+        .addEventListener('input', handleChange)
+
+    async function getQuestion(username) {
+        try {
+            const response = await (await fetch('/getquestion?username=' + username)).json()
+            return response.question;
+        } catch (ex) {
+            return undefined
+        }
+    }
+</script>
+</html>
+
+

@@ -1,11 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import Note
+from .models import Note, SecurityQuestion
 from django.utils import timezone
 from django.db import connection
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
 
 
 @login_required
@@ -64,3 +65,43 @@ def search(request):
         context = {"notes": None}
 
     return render(request, "brokensite/search.html", context)
+
+
+def recover(request):
+    if request.method == "GET":
+        return render(request, "brokensite/recover.html")
+    else:
+        # handle post here
+        try:
+            username = request.POST.get('username')
+            user = User.objects.filter(username=username).first()
+            answer = request.POST.get('answer')
+            newpassword = request.POST.get('password')
+
+            question = SecurityQuestion.objects.filter(user_id=user.id).first()
+
+            if question.answer != answer:
+                raise Exception("Answers did not match")
+
+            user.set_password(newpassword)
+            question.answer = request.POST.get('newanswer')
+            question.question = request.POST.get('newquestion')
+            question.save()
+            user.save()
+
+
+            return render(request, "brokensite/recover.html", {"message": "Password recovered! New password is " + newpassword})
+        except:
+            return render(request, "brokensite/recover.html", {"message": "Password recovery failed."})
+
+
+def getquestion(request):
+    try:
+        username = request.GET.get('username', None)
+        user = User.objects.filter(username=username).first()
+        question = SecurityQuestion.objects.filter(user_id=user.id).first().question
+        return JsonResponse({
+            "question": question
+        })
+    except:
+        return JsonResponse({})
