@@ -4,21 +4,14 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'brokensite/css/site.css' %}"/>
     <meta charset="UTF-8"/>
-    <title>Amazing Notes</title>
+    <title>Search Results - Amazing Notes</title>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="description" content=""/>
     <link rel="icon" href="favicon.png">
 </head>
 <body>
-<p><a href="{% url 'logout' %}">Log Out</a></p>
-<p class="error">
-    {{ error }}
-</p>
-<h1>
-    Amazing Notes
-</h1>
-<h2>Your notes</h2>
-{% if notes|length < 1 %}
+<h1>Search results</h1>
+{% if notes|length < 1 and notes is not None %}
     <i>You have no notes</i>
 {% else %}
     <p><i>You may click on a note to delete it. This action can not be undone.</i></p>
@@ -28,27 +21,9 @@
         {% endfor %}
     </ul>
 {% endif %}
-<h2>Add note</h2>
-<form method="POST">
-    {% csrf_token %}
-    <div>
-        <label for="note_text">Note text</label>
-        <textarea name="note_text" id="note_text"></textarea>
-    </div>
-    <button type="Submit">Add note</button>
-</form>
-<h2>Search for a note</h2>
 <p>
-<i>This action searches through all of your notes and returns the ones containing they keyword you give.</i>
+    <a href="/">Return to front page</a>
 </p>
-<form method="GET" action="/search">
-    {% csrf_token %}
-    <div style="margin-bottom: 1rem">
-        <label for="textToSearch">Keyword</label>
-        <input type="text" name="textToSearch" id="textToSearch"></input>
-    </div>
-    <button type="Submit">Search</button>
-</form>
 </body>
 <script>
     function getCookie(name) {
@@ -67,7 +42,7 @@
     }
 
     function deleteNote(id) {
-        const url = 'delete/'
+        const url = '/delete/'
         fetch(url, {
             method: "POST",
             headers: {
@@ -85,5 +60,3 @@
     }
 </script>
 </html>
-
-

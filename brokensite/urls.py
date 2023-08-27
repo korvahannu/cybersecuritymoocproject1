@@ -4,5 +4,6 @@ from . import views
 app_name = "brokensite"
 urlpatterns = [
     path('', views.index, name="index"),
-    path('<int:note_id>/', views.delete, name="delete")
+    path('delete/', views.delete, name="delete"),
+    path('search/', views.search, name="search"),
 ]
