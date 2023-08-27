@@ -42,10 +42,10 @@
 <i>This action searches through all of your notes and returns the ones containing they keyword you give.</i>
 </p>
 <form method="GET" action="/search">
-    {% csrf_token %}
     <div style="margin-bottom: 1rem">
-        <label for="textToSearch">Keyword</label>
-        <input type="text" name="textToSearch" id="textToSearch"></input>
+        <label for="keyword">Keyword</label>
+        <input type="text" name="keyword" id="keyword"></input>
+        <input type="hidden" name="userid" id="userid" value="{{ user.id }}" />
     </div>
     <button type="Submit">Search</button>
 </form>
